@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "is_focused": true,
+    "platform_window_id": 41943051,
+    "tabs": [
+      {
+        "active_window_history": [
+          6,
+          2
+        ],
+        "id": 1,
+        "is_focused": true,
+        "layout": "grid",
+        "layout_state": {
+          "biased_cols": {
+            "1": -0.17187500000000003
+          },
+          "biased_rows": {}
+        },
+        "title": "zsh",
+        "windows": [
+          {
+            "cmdline": [
+              "/usr/bin/zsh"
+            ],
+            "columns": 171,
+            "cwd": "/home/raghav/code/go",
+            "env": {
+              "KITTY_WINDOW_ID": "2"
+            },
+            "foreground_processes": [
+              {
+                "cmdline": [
+                  "nvim",
+                  "kitty-sesh"
+                ],
+                "cwd": "/home/raghav/code/go",
+                "pid": 26587
+              }
+            ],
+            "id": 2,
+            "is_focused": false,
+            "is_self": false,
+            "lines": 59,
+            "pid": 13933,
+            "title": "zsh"
+          },
+          {
+            "cmdline": [
+              "/usr/bin/zsh"
+            ],
+            "columns": 83,
+            "cwd": "/home/raghav/code/go/kitty-sesh/script",
+            "env": {
+              "KITTY_WINDOW_ID": "6"
+            },
+            "foreground_processes": [
+              {
+                "cmdline": [
+                  "kitty",
+                  "@",
+                  "ls"
+                ],
+                "cwd": "/home/raghav/code/go/kitty-sesh/script",
+                "pid": 39358
+              }
+            ],
+            "id": 6,
+            "is_focused": true,
+            "is_self": true,
+            "lines": 59,
+            "pid": 37624,
+            "title": "zsh"
+          }
+        ]
+      }
+    ],
+    "wm_class": "kitty",
+    "wm_name": "kitty"
+  }
+]
