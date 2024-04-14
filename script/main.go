@@ -16,9 +16,11 @@ type Pairs struct {
 }
 
 type LayoutState struct {
-	MainBias       []float32 `json:"main_bias"`
-	NumFullSizeWin int16     `json:"num_full_size_windows"`
-	Pairs          *Pairs    `json:"pairs,omitempty"`
+	MainBias       []float32          `json:"main_bias"`
+	NumFullSizeWin int16              `json:"num_full_size_windows"`
+	Pairs          *Pairs             `json:"pairs,omitempty"`
+	BiasedCols     map[string]float64 `json:"biased_cols"`
+	BiasedRows     map[string]float64 `json:"biased_rows"`
 }
 
 type Window struct {
@@ -47,7 +49,7 @@ type OSWindow struct {
 	Tabs []Tab `json:"tabs"`
 }
 
-func envToStr(env map[string]string) string {
+func getEnvVars(env map[string]string) string {
 	var sb strings.Builder
 	for key, value := range env {
 		sb.WriteString(fmt.Sprintf("--env %s=%s ", key, value))
@@ -55,46 +57,180 @@ func envToStr(env map[string]string) string {
 	return strings.TrimSpace(sb.String())
 }
 
-func cmdlineToStr(cmdline []string) string {
-	return strings.Join(cmdline, " ")
-}
-
-func verticalLayout(tab Tab) error {
-	fmt.Printf("title %s", tab.Title)
-	return nil
-}
-
-func horiztonalLayout(tab Tab) error {
-	// grabbing the list of windows id in the order they are to be added
-	var traverseArr []int
+func getTraverseArr(tab Tab) []int {
+	var temp []int
 	for _, item := range tab.Groups {
-		traverseArr = append(traverseArr, item.Windows...)
+		temp = append(temp, item.Windows...)
 	}
-	// creating windows
+	return temp
+}
+
+func getWindow(windows []Window, window *Window, id int) {
+	for i := range windows {
+		if windows[i].Id == id {
+			window = &windows[i]
+			break
+		}
+	}
+}
+
+// breaking the side case where one of the windows have the command which creates a new session.
+func loopBreak(title string) string {
+	var cmd string
+	if strings.Contains(title, "--session") {
+		cmd = ""
+	} else {
+		cmd = title
+	}
+	return cmd
+}
+
+func verticalLayout(tab Tab) {
 	windows := tab.Windows
 	totalWindows := len(windows)
-	for i, id := range traverseArr {
+	traverseArr := getTraverseArr(tab)
+	// creating windows
+	for _, id := range traverseArr {
 		var window *Window
-
-		for i := range windows {
-			if windows[i].Id == id {
-				window = &windows[i]
-				break
-			}
-		}
-		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", envToStr(window.Env), window.Title, window.Cwd, window.Title)
-		if i%2 == 0 {
-			if 255/totalWindows > window.Cols {
-				fmt.Printf("resize_window narrower %d\n", (255/totalWindows)-window.Cols)
-			} else {
-				fmt.Printf("resize_window wider %d\n", window.Cols-(255/totalWindows))
-			}
+		getWindow(windows, window, id)
+		// make the command for each window
+		cmd := loopBreak(window.Title)
+		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+		if 59/totalWindows > window.Rows {
+			fmt.Printf("resize_window shorter %d\n", (59/totalWindows)-window.Rows)
+		} else if 59/totalWindows < window.Rows {
+			fmt.Printf("resize_window taller %d\n", window.Rows-(59/totalWindows))
 		}
 		if window.IsFocused {
 			fmt.Println("focus")
 		}
 	}
-	return nil
+}
+
+func horiztonalLayout(tab Tab) {
+	// grabbing the list of windows id in the order they are to be added
+	traverseArr := getTraverseArr(tab)
+
+	// creating windows
+	windows := tab.Windows
+	totalWindows := len(windows)
+	for _, id := range traverseArr {
+		var window *Window
+		getWindow(windows, window, id)
+		// make the command for each window
+		cmd := loopBreak(window.Title)
+
+		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+		if 255/totalWindows > window.Cols {
+			fmt.Printf("resize_window narrower %d\n", (255/totalWindows)-window.Cols)
+		} else if 255/totalWindows < window.Cols {
+			fmt.Printf("resize_window wider %d\n", window.Cols-(255/totalWindows))
+		}
+		if window.IsFocused {
+			fmt.Println("focus")
+		}
+	}
+}
+
+func gridLayout(tab Tab) {
+	traverseArr := getTraverseArr(tab)
+
+	// creating windows
+	windows := tab.Windows
+	// totalWindows := len(windows)
+	for _, id := range traverseArr {
+		var window *Window
+		getWindow(windows, window, id)
+		// make the command for each window
+
+		cmd := loopBreak(window.Title)
+
+		// Resizing stuff
+		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+		// keys := make([]int, 0, totalWindows)
+		// for k := range tab.LayoutState.BiasedCols {
+		// 	intKey, err := strconv.Atoi(k)
+		// 	if err != nil {
+		// 		fmt.Println("Error converting key to int:", err)
+		// 		return
+		// 	}
+		// 	keys = append(keys, intKey)
+		// }
+		// if indx == keys[indx] || (indx != 0 && len(keys) > indx/2 && keys[indx/2] != 0) {
+		//   fmt.Println("resize_window ")
+		//   }
+	}
+}
+
+func splitLayout(tab Tab) {
+	traverseArr := getTraverseArr(tab)
+
+	// creating windows
+	windows := tab.Windows
+	// totalWindows := len(windows)
+	for _, id := range traverseArr {
+		var window *Window
+		getWindow(windows, window, id)
+
+		// make the command for each window
+
+		cmd := loopBreak(window.Title)
+
+		// Resizing stuff
+		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+		//SPLITS LAYOUT SIZING
+		// if tab.LayoutState.Pairs != nil {
+		// 	fmt.Printf("bias %f\n", tab.LayoutState.Pairs.Bias)
+		// 	fmt.Printf("horizontal %t\n", tab.LayoutState.Pairs.Horizontal)
+		//
+		// 	// Print type and value of One
+		// 	if intValue, ok := tab.LayoutState.Pairs.One.(float64); ok {
+		// 		fmt.Printf("pair one: %f\n", intValue)
+		// 	} else if pairs, ok := tab.LayoutState.Pairs.One.(map[string]interface{}); ok {
+		// 		if one, ok := pairs["one"].(int); ok {
+		// 			fmt.Printf("pair one: %d\n", one)
+		// 		}
+		// 	}
+		// 	// Print type and value of Two
+		// 	if intValue, ok := tab.LayoutState.Pairs.Two.(float64); ok {
+		// 		fmt.Printf("pair two: %f\n", intValue)
+		// 	} else if pairs, ok := tab.LayoutState.Pairs.Two.(map[string]interface{}); ok {
+		// 		fmt.Printf("pair two: %.2f\n", pairs["bias"].(float64))
+		// 	}
+		// }
+	}
+}
+
+func tallLayout(tab Tab) {
+	traverseArr := getTraverseArr(tab)
+	// creating windows
+	windows := tab.Windows
+	// totalWindows := len(windows)
+	for _, id := range traverseArr {
+		var window *Window
+		getWindow(windows, window, id)
+		// make the command for each window
+		cmd := loopBreak(window.Title)
+
+		// Resizing stuff
+		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+	}
+}
+
+func fatLayout(tab Tab) {
+	traverseArr := getTraverseArr(tab)
+	// creating windows
+	windows := tab.Windows
+	// totalWindows := len(windows)
+	for _, id := range traverseArr {
+		var window *Window
+		getWindow(windows, window, id)
+		// make the command for each window
+		cmd := loopBreak(window.Title)
+
+		// Resizing stuff
+		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+	}
 }
 
 func convert(session []OSWindow) {
@@ -110,47 +246,21 @@ func convert(session []OSWindow) {
 		for _, tab := range osWindow.Tabs {
 			fmt.Printf("new_tab %s\n", tab.Title)
 			fmt.Printf("layout %s\n", tab.Layout)
-			// if tab.Windows != nil {
-			// 	fmt.Printf("cd %s\n", tab.Windows[0].Cwd)
-			// }
-
-			// SPLITS LAYOUT SIZING
-			// if tab.LayoutState.Pairs != nil {
-			// 	fmt.Printf("bias %f\n", tab.LayoutState.Pairs.Bias)
-			// 	fmt.Printf("horizontal %t\n", tab.LayoutState.Pairs.Horizontal)
-			//
-			// 	// Print type and value of One
-			// 	if intValue, ok := tab.LayoutState.Pairs.One.(float64); ok {
-			// 		fmt.Printf("pair one: %f\n", intValue)
-			// 	} else if pairs, ok := tab.LayoutState.Pairs.One.(map[string]interface{}); ok {
-			// 		if one, ok := pairs["one"].(int); ok {
-			// 			fmt.Printf("pair one: %d\n", one)
-			// 		}
-			// 	}
-			// 	// Print type and value of Two
-			// 	if intValue, ok := tab.LayoutState.Pairs.Two.(float64); ok {
-			// 		fmt.Printf("pair two: %f\n", intValue)
-			// 	} else if pairs, ok := tab.LayoutState.Pairs.Two.(map[string]interface{}); ok {
-			// 		fmt.Printf("pair two: %.2f\n", pairs["bias"].(float64))
-			// 	}
-			// }
 			switch tab.Layout {
 			case "horizontal":
 				horiztonalLayout(tab)
 			case "vertical":
 				verticalLayout(tab)
+			case "grid":
+				gridLayout(tab)
+			case "split":
+				splitLayout(tab)
+			case "tall":
+				tallLayout(tab)
+			case "fat":
+				fatLayout(tab)
 			default:
 			}
-			// for i, w := range tab.Windows {
-			// 	fmt.Printf("title %s\n", w.Title)
-			// 	fmt.Printf("launch %s %s\n", envToStr(w.Env), fgProcToStr(w.ForegroundProcesses))
-			// 	if i == 0 {
-			// 		fmt.Println("resize_window wider 10")
-			// 	}
-			// 	if w.IsFocused {
-			// 		fmt.Println("focus")
-			// 	}
-			// }
 		}
 	}
 }
