@@ -65,13 +65,13 @@ func getTraverseArr(tab Tab) []int {
 	return temp
 }
 
-func getWindow(windows []Window, window *Window, id int) {
+func getWindow(windows []Window, id int) *Window {
 	for i := range windows {
 		if windows[i].Id == id {
-			window = &windows[i]
-			break
+			return &windows[i]
 		}
 	}
+	return nil
 }
 
 // breaking the side case where one of the windows have the command which creates a new session.
@@ -85,21 +85,23 @@ func loopBreak(title string) string {
 	return cmd
 }
 
-func verticalLayout(tab Tab) {
+func verticalLayout(tab Tab, outputFile *os.File) {
 	windows := tab.Windows
 	totalWindows := len(windows)
 	traverseArr := getTraverseArr(tab)
 	// creating windows
 	for _, id := range traverseArr {
-		var window *Window
-		getWindow(windows, window, id)
+		window := getWindow(windows, id)
+		if window == nil {
+			continue
+		}
 		// make the command for each window
 		cmd := loopBreak(window.Title)
-		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
 		if 59/totalWindows > window.Rows {
-			fmt.Printf("resize_window shorter %d\n", (59/totalWindows)-window.Rows)
+			outputFile.WriteString(fmt.Sprintf("resize_window shorter %d\n", (59/totalWindows)-window.Rows))
 		} else if 59/totalWindows < window.Rows {
-			fmt.Printf("resize_window taller %d\n", window.Rows-(59/totalWindows))
+			outputFile.WriteString(fmt.Sprintf("resize_window taller %d\n", window.Rows-(59/totalWindows)))
 		}
 		if window.IsFocused {
 			fmt.Println("focus")
@@ -107,7 +109,7 @@ func verticalLayout(tab Tab) {
 	}
 }
 
-func horiztonalLayout(tab Tab) {
+func horiztonalLayout(tab Tab, outputFile *os.File) {
 	// grabbing the list of windows id in the order they are to be added
 	traverseArr := getTraverseArr(tab)
 
@@ -115,16 +117,18 @@ func horiztonalLayout(tab Tab) {
 	windows := tab.Windows
 	totalWindows := len(windows)
 	for _, id := range traverseArr {
-		var window *Window
-		getWindow(windows, window, id)
+		window := getWindow(windows, id)
+		if window == nil {
+			continue
+		}
 		// make the command for each window
 		cmd := loopBreak(window.Title)
 
-		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
 		if 255/totalWindows > window.Cols {
-			fmt.Printf("resize_window narrower %d\n", (255/totalWindows)-window.Cols)
+			outputFile.WriteString(fmt.Sprintf("resize_window narrower %d\n", (255/totalWindows)-window.Cols))
 		} else if 255/totalWindows < window.Cols {
-			fmt.Printf("resize_window wider %d\n", window.Cols-(255/totalWindows))
+			outputFile.WriteString(fmt.Sprintf("resize_window wider %d\n", window.Cols-(255/totalWindows)))
 		}
 		if window.IsFocused {
 			fmt.Println("focus")
@@ -132,21 +136,23 @@ func horiztonalLayout(tab Tab) {
 	}
 }
 
-func gridLayout(tab Tab) {
+func gridLayout(tab Tab, outputFile *os.File) {
 	traverseArr := getTraverseArr(tab)
 
 	// creating windows
 	windows := tab.Windows
 	// totalWindows := len(windows)
 	for _, id := range traverseArr {
-		var window *Window
-		getWindow(windows, window, id)
+		window := getWindow(windows, id)
+		if window == nil {
+			continue
+		}
 		// make the command for each window
 
 		cmd := loopBreak(window.Title)
 
 		// Resizing stuff
-		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
 		// keys := make([]int, 0, totalWindows)
 		// for k := range tab.LayoutState.BiasedCols {
 		// 	intKey, err := strconv.Atoi(k)
@@ -162,78 +168,83 @@ func gridLayout(tab Tab) {
 	}
 }
 
-func splitLayout(tab Tab) {
+func splitLayout(tab Tab, outputFile *os.File) {
 	traverseArr := getTraverseArr(tab)
 
 	// creating windows
 	windows := tab.Windows
 	// totalWindows := len(windows)
 	for _, id := range traverseArr {
-		var window *Window
-		getWindow(windows, window, id)
-
+		window := getWindow(windows, id)
+		if window == nil {
+			continue
+		}
 		// make the command for each window
 
 		cmd := loopBreak(window.Title)
 
 		// Resizing stuff
-		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
 		//SPLITS LAYOUT SIZING
 		// if tab.LayoutState.Pairs != nil {
-		// 	fmt.Printf("bias %f\n", tab.LayoutState.Pairs.Bias)
-		// 	fmt.Printf("horizontal %t\n", tab.LayoutState.Pairs.Horizontal)
+		// 	outputFile.WriteString(fmt.Sprintf("bias %f\n", tab.LayoutState.Pairs.Bias)
+		// 	outputFile.WriteString(fmt.Sprintf("horizontal %t\n", tab.LayoutState.Pairs.Horizontal)
 		//
 		// 	// Print type and value of One
 		// 	if intValue, ok := tab.LayoutState.Pairs.One.(float64); ok {
-		// 		fmt.Printf("pair one: %f\n", intValue)
+		// 		outputFile.WriteString(fmt.Sprintf("pair one: %f\n", intValue)
 		// 	} else if pairs, ok := tab.LayoutState.Pairs.One.(map[string]interface{}); ok {
 		// 		if one, ok := pairs["one"].(int); ok {
-		// 			fmt.Printf("pair one: %d\n", one)
+		// 			outputFile.WriteString(fmt.Sprintf("pair one: %d\n", one)
 		// 		}
 		// 	}
 		// 	// Print type and value of Two
 		// 	if intValue, ok := tab.LayoutState.Pairs.Two.(float64); ok {
-		// 		fmt.Printf("pair two: %f\n", intValue)
+		// 		outputFile.WriteString(fmt.Sprintf("pair two: %f\n", intValue)
 		// 	} else if pairs, ok := tab.LayoutState.Pairs.Two.(map[string]interface{}); ok {
-		// 		fmt.Printf("pair two: %.2f\n", pairs["bias"].(float64))
+		// 		outputFile.WriteString(fmt.Sprintf("pair two: %.2f\n", pairs["bias"].(float64))
 		// 	}
 		// }
 	}
 }
 
-func tallLayout(tab Tab) {
+func tallLayout(tab Tab, outputFile *os.File) {
 	traverseArr := getTraverseArr(tab)
 	// creating windows
 	windows := tab.Windows
 	// totalWindows := len(windows)
 	for _, id := range traverseArr {
-		var window *Window
-		getWindow(windows, window, id)
+		window := getWindow(windows, id)
+		if window == nil {
+			continue
+		}
 		// make the command for each window
 		cmd := loopBreak(window.Title)
 
 		// Resizing stuff
-		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
 	}
 }
 
-func fatLayout(tab Tab) {
+func fatLayout(tab Tab, outputFile *os.File) {
 	traverseArr := getTraverseArr(tab)
 	// creating windows
 	windows := tab.Windows
 	// totalWindows := len(windows)
 	for _, id := range traverseArr {
-		var window *Window
-		getWindow(windows, window, id)
+		window := getWindow(windows, id)
+		if window == nil {
+			continue
+		}
 		// make the command for each window
 		cmd := loopBreak(window.Title)
 
 		// Resizing stuff
-		fmt.Printf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd)
+		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
 	}
 }
 
-func convert(session []OSWindow) {
+func convert(session []OSWindow, outputFile *os.File) {
 	first := true
 
 	for _, osWindow := range session {
@@ -244,21 +255,21 @@ func convert(session []OSWindow) {
 		}
 
 		for _, tab := range osWindow.Tabs {
-			fmt.Printf("new_tab %s\n", tab.Title)
-			fmt.Printf("layout %s\n", tab.Layout)
+			outputFile.WriteString(fmt.Sprintf("new_tab %s\n", tab.Title))
+			outputFile.WriteString(fmt.Sprintf("layout %s\n", tab.Layout))
 			switch tab.Layout {
 			case "horizontal":
-				horiztonalLayout(tab)
+				horiztonalLayout(tab, outputFile)
 			case "vertical":
-				verticalLayout(tab)
+				verticalLayout(tab, outputFile)
 			case "grid":
-				gridLayout(tab)
+				gridLayout(tab, outputFile)
 			case "split":
-				splitLayout(tab)
+				splitLayout(tab, outputFile)
 			case "tall":
-				tallLayout(tab)
+				tallLayout(tab, outputFile)
 			case "fat":
-				fatLayout(tab)
+				fatLayout(tab, outputFile)
 			default:
 			}
 		}
@@ -272,5 +283,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	convert(session)
+	// Open a new file for writing
+	outputFile, err := os.Create("output.txt")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error creating file: %v\n", err)
+		os.Exit(1)
+	}
+
+	defer outputFile.Close()
+	convert(session, outputFile)
 }
