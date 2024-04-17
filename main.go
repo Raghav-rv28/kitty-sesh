@@ -230,10 +230,11 @@ func main() {
 		renameInput := tview.NewInputField().
 			SetLabel("New Name: ").
 			SetFieldWidth(60).
-			SetAcceptanceFunc(tview.InputFieldMaxLength(50))
+			SetAcceptanceFunc(tview.InputFieldMaxLength(50)).
+			SetFieldBackgroundColor(tcell.ColorGray)
 
-		renameInput.SetFieldBackgroundColor(tcell.ColorGray)
-
+		// modal to confirm changes
+		modal := tview.NewModal().AddButtons([]string{"Yes", "No"})
 		// the layout master
 		flex := tview.NewFlex().
 			SetDirection(tview.FlexRow).
@@ -259,14 +260,6 @@ func main() {
 
 			}
 		})
-		//
-		// modal := func(p tview.Primitive, width, height int) tview.Primitive {
-		// 	return tview.NewGrid().
-		// 		SetColumns(0, width, 0).
-		// 		SetRows(0, height, 0).
-		// 		AddItem(p, 1, 1, 1, 1, 0, 0, true)
-		// }
-		// Layout
 
 		// Set Input Capture to handle custom key events
 		fileList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -284,17 +277,25 @@ func main() {
 					app.Stop()
 					return nil
 				case 'd', 'D':
-					index := fileList.GetCurrentItem()
-					fileName, _ := fileList.GetItemText(index)
-					fileList.SetCurrentItem(index + 1)
-					content, err := os.ReadFile(filepath.Join(directory, fileName))
-					if err != nil {
-						fileContent.SetText(fmt.Sprintf("Error reading file: %s", err))
-						return nil
-					}
-					fileContent.SetText(string(content))
-					os.Remove(filepath.Join(directory, fileName))
-					refreshFileList(fileList, directory)
+					modal.SetText("Are you sure you want to delete this session?")
+					flex.AddItem(modal, 1, 0, true)
+					app.SetFocus(modal)
+					modal.SetDoneFunc(func(btnIndx int, btnLbl string) {
+						if btnLbl == "Yes" {
+							index := fileList.GetCurrentItem()
+							fileName, _ := fileList.GetItemText(index)
+							fileList.SetCurrentItem(index + 1)
+							content, err := os.ReadFile(filepath.Join(directory, fileName))
+							if err != nil {
+								fileContent.SetText(fmt.Sprintf("Error reading file: %s", err))
+							}
+							fileContent.SetText(string(content))
+							os.Remove(filepath.Join(directory, fileName))
+							refreshFileList(fileList, directory)
+						}
+						flex.RemoveItem(modal)
+						app.SetFocus(fileList)
+					})
 					return nil
 				}
 				// updating the FileContent primitive to show the contents of the file.

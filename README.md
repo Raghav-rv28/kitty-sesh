@@ -53,4 +53,4 @@ For any questions or feedback, please feel free to contact us.
   - Fat
   - ~~Stack~~
 - Replace Flex with Grid
-- Add confirm Modal for delete operation.
+- ~~Add confirm Modal for delete operation~~
