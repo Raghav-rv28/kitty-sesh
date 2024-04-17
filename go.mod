@@ -2,7 +2,7 @@ module github.com/raghav-rv28/kitty-sesh
 
 go 1.22.1
 
-require github.com/rivo/tview v0.0.0-20240406141410-79d4cc321256
+require github.com/rivo/tview v0.0.0-20240413115534-b0d41c484b95
 
 require (
 	github.com/gdamore/encoding v1.0.0 // indirect
