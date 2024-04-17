@@ -2,7 +2,7 @@
 
 Kitty-sesh is an Kitty Terminal Session Manager, Go-based application that provides a graphical user interface (GUI) to manage and interact with Kitty terminal sessions. Users can save, view, rename, delete, and launch stored sessions directly from the application.
 
-Add Image here
+![image](https://github.com/Raghav-rv28/kitty-sesh/assets/62635473/70ae0a80-85b9-427b-9444-950cf7eafe0e)
 
 # Installation
 ## Requirements
