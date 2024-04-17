@@ -15,7 +15,7 @@ Kitty-sesh is an Kitty Terminal Session Manager, Go-based application that provi
 
 - use the command below for installation in Linux.
 
-```
+```sh
 installation command.
 ```
 
@@ -44,14 +44,13 @@ For any questions or feedback, please feel free to contact us.
 
 ## TODO
 
-
-- Work on Layouts Resizing 
-	- ~~Horizontal~~
-	- ~~Vertical~~
-	- Grid
-	- Split
-	- Tall
-	- Fat
-	- ~~Stack~~
-- 
-
+- Work on Layouts Resizing
+  - ~~Horizontal~~
+  - ~~Vertical~~
+  - Grid
+  - Split
+  - Tall
+  - Fat
+  - ~~Stack~~
+- Replace Flex with Grid
+- Add confirm Modal for delete operation.

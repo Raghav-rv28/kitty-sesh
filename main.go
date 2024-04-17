@@ -17,19 +17,23 @@ type OSWindow struct {
 	Tabs []Tab `json:"tabs"`
 }
 
-func getNextFileName(folderPath string) (string, error) {
+func getNextFileName(folderPath string, Args []string) (string, error) {
 	// Get the list of files in the folder
 	files, err := os.ReadDir(folderPath)
 	if err != nil {
 		return "", err
 	}
+	var filename string
+	if len(Args) > 2 {
+		filename = fmt.Sprintf("%s.kitty", Args[2])
+	} else {
+		// Calculate the next file number
+		fileNumber := len(files) + 1
 
-	// Calculate the next file number
-	fileNumber := len(files) + 1
-
-	// Generate the filename with datetime and file number
-	currentTime := time.Now().Format("2006-01-02T15-04-05")
-	filename := fmt.Sprintf("%s-%d.kitty", currentTime, fileNumber)
+		// Generate the filename with datetime and file number
+		currentTime := time.Now().Format("2006-01-02T15-04-05")
+		filename = fmt.Sprintf("%s-%d.kitty", currentTime, fileNumber)
+	}
 	fmt.Println(filename)
 	// Return the full path to the file
 	return filepath.Join(folderPath, filename), nil
@@ -179,14 +183,20 @@ func main() {
 			os.Exit(1)
 		}
 		// make the output file and folder.
-		folderPath := "/home/raghav/.config/kitty/sessions"
+		usr, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Println("Error getting user home directory:", err)
+			return
+		}
+
+		// Define the folder path
+		folderPath := filepath.Join(usr, ".config", "kitty", "sessions")
 		if err := os.MkdirAll(folderPath, 0755); err != nil {
 			fmt.Fprintf(os.Stderr, "error creating folder: %v\n", err)
 			os.Exit(1)
 		}
-
 		// Generate the next filename
-		filename, err := getNextFileName(folderPath)
+		filename, err := getNextFileName(folderPath, os.Args)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error generating filename: %v\n", err)
 			os.Exit(1)
@@ -277,6 +287,12 @@ func main() {
 					index := fileList.GetCurrentItem()
 					fileName, _ := fileList.GetItemText(index)
 					fileList.SetCurrentItem(index + 1)
+					content, err := os.ReadFile(filepath.Join(directory, fileName))
+					if err != nil {
+						fileContent.SetText(fmt.Sprintf("Error reading file: %s", err))
+						return nil
+					}
+					fileContent.SetText(string(content))
 					os.Remove(filepath.Join(directory, fileName))
 					refreshFileList(fileList, directory)
 					return nil
