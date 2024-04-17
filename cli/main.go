@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -58,12 +60,15 @@ func main() {
 
 	// Set event handler for file selection
 	fileList.SetSelectedFunc(func(index int, primaryString string, _ string, _ rune) {
-		content, err := os.ReadFile(filepath.Join(directory, primaryString))
+		cmd := exec.Command("kitty", "--detach", "--session", filepath.Join(directory, primaryString))
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		err := cmd.Run()
 		if err != nil {
-			fileContent.SetText(fmt.Sprintf("Error reading file: %s", err))
+			fmt.Println("Error launching Kitty session:", cmd.Args, err)
 			return
 		}
-		fileContent.SetText(string(content))
 	})
 
 	renameInput := tview.NewInputField().
@@ -71,11 +76,17 @@ func main() {
 		SetFieldWidth(60).
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50))
 
+	renameInput.SetFieldBackgroundColor(tcell.ColorGray)
+	flex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(fileList, 0, 1, true).
+		AddItem(fileContent, 0, 3, false)
+
 	renameInput.SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
 			oldName, _ := fileList.GetItemText(fileList.GetCurrentItem())
 			newName := renameInput.GetText()
-
+			newName += ".kitty"
 			if newName != "" && newName != oldName {
 				err := os.Rename(filepath.Join(directory, oldName), filepath.Join(directory, newName))
 				if err != nil {
@@ -85,29 +96,24 @@ func main() {
 					fileContent.SetText("")
 				}
 			}
-
+			flex.RemoveItem(renameInput)
 			app.SetFocus(fileList)
-			fileList.SetSelectedFunc(func(index int, _ string, _ string, _ rune) {
-				fileName, _ := fileList.GetItemText(index)
-				fileContent.SetText(readFile(filepath.Join(directory, fileName)))
-				renameInput.SetText(fileName)
-			})
+
+			// fileList.SetSelectedFunc(func(index int, _ string, _ string, _ rune) {
+			// 	fileName, _ := fileList.GetItemText(index)
+			// 	fileContent.SetText(readFile(filepath.Join(directory, fileName)))
+			// 	renameInput.SetText(fileName)
+			// })
 		}
 	})
-	modal := func(p tview.Primitive, width, height int) tview.Primitive {
-		return tview.NewFlex().
-			AddItem(nil, 0, 1, false).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(nil, 0, 1, false).
-				AddItem(p, height, 1, true).
-				AddItem(nil, 0, 1, false), width, 1, true).
-			AddItem(nil, 0, 1, false)
-	}
+	//
+	// modal := func(p tview.Primitive, width, height int) tview.Primitive {
+	// 	return tview.NewGrid().
+	// 		SetColumns(0, width, 0).
+	// 		SetRows(0, height, 0).
+	// 		AddItem(p, 1, 1, 1, 1, 0, 0, true)
+	// }
 	// Layout
-	flex := tview.NewFlex().
-		SetDirection(tview.FlexRow).
-		AddItem(fileList, 0, 1, true).
-		AddItem(fileContent, 0, 3, false)
 
 	// Set Input Capture to handle custom key events
 	fileList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -116,10 +122,36 @@ func main() {
 			case 'r', 'R':
 				index := fileList.GetCurrentItem()
 				fileName, _ := fileList.GetItemText(index)
-				renameInput.SetText(fileName)
-				flex.AddItem(modal(renameInput, 75, 25), 1, 0, false)
+				renameInput.SetText(strings.Split(fileName, ".kitty")[0])
+				flex.AddItem(renameInput, 0, 1, true)
+				app.SetFocus(renameInput)
+				// flex.AddItem(modal(renameInput, 75, 25), 1, 0, true)
+				return nil
+			case 'q', 'Q':
+				app.Stop()
+				return nil
+			case 'd', 'D':
+				index := fileList.GetCurrentItem()
+				fileName, _ := fileList.GetItemText(index)
+				fileList.SetCurrentItem(index + 1)
+				os.Remove(filepath.Join(directory, fileName))
+				refreshFileList(fileList, directory)
 				return nil
 			}
+			// updating the FileContent primitive to show the contents of the file.
+		} else if event.Key() == tcell.KeyUp || event.Key() == tcell.KeyDown {
+			if fileList.GetItemCount() == 0 {
+				fileContent.SetText(fmt.Sprintln("No Sessions Available"))
+				return nil
+			}
+			index := fileList.GetCurrentItem()
+			fileName, _ := fileList.GetItemText(index)
+			content, err := os.ReadFile(filepath.Join(directory, fileName))
+			if err != nil {
+				fileContent.SetText(fmt.Sprintf("Error reading file: %s", err))
+				return nil
+			}
+			fileContent.SetText(string(content))
 		}
 		return event
 	})
