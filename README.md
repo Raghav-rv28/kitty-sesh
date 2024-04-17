@@ -44,4 +44,14 @@ For any questions or feedback, please feel free to contact us.
 
 ## TODO
 
-- Work on Layouts
+
+- Work on Layouts Resizing 
+	- ~~Horizontal~~
+	- ~~Vertical~~
+	- Grid
+	- Split
+	- Tall
+	- Fat
+	- ~~Stack~~
+- 
+
