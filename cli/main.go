@@ -20,8 +20,8 @@ func refreshFileList(fileList *tview.List, directory string) {
 
 	fileList.Clear()
 
-	for _, file := range files {
-		fileList.AddItem(file.Name(), "", 0, nil)
+	for i, file := range files {
+		fileList.AddItem(file.Name(), "", rune(i+49), nil)
 	}
 }
 
@@ -33,32 +33,23 @@ func readFile(filePath string) string {
 	return string(content)
 }
 
-func main() {
-	app := tview.NewApplication()
-
-	// Constant directory
-	directory := "/home/raghav/.config/kitty/sessions/"
-
+func getFileList(directory string) *tview.List {
 	// List of files
 	fileList := tview.NewList().
 		ShowSecondaryText(false)
 	fileList.SetTitle("Sessions").SetBorder(true)
-
-	// File content preview
-	fileContent := tview.NewTextView()
-	fileContent.SetBorder(true).SetTitle("Preview")
 	// Load files from the directory
 	files, err := os.ReadDir(directory)
 	if err != nil {
 		fmt.Println("Error reading directory:", err)
-		return
+		return nil
 	}
 
 	for i, file := range files {
 		fileList.AddItem(file.Name(), "", rune(i+49), nil)
 	}
 
-	// Set event handler for file selection
+	// run the sessions on pressing enter
 	fileList.SetSelectedFunc(func(index int, primaryString string, _ string, _ rune) {
 		cmd := exec.Command("kitty", "--detach", "--session", filepath.Join(directory, primaryString))
 		cmd.Stdout = os.Stdout
@@ -70,6 +61,24 @@ func main() {
 			return
 		}
 	})
+	return fileList
+}
+
+func main() {
+	app := tview.NewApplication()
+
+	// Constant directory
+	directory := "/home/raghav/.config/kitty/sessions/"
+	// get list gui with list of kitty sessions in the directory.
+	fileList := getFileList(directory)
+	// using frame to add instructions on top
+	frame := tview.NewFrame(fileList).
+		AddText("Press 'q' to Quit kitty-sesh; 'r' to Rename sessions; 'd' to Delete sessions", false, tview.AlignCenter, tcell.ColorWhite).
+		AddText("Use Arrow Keys to traverse the list", true, tview.AlignCenter, tcell.ColorWhite).
+		AddText("Press Enter to start the session ", true, tview.AlignCenter, tcell.ColorWhite)
+	// File content preview
+	fileContent := tview.NewTextView()
+	fileContent.SetBorder(true).SetTitle("Preview")
 
 	renameInput := tview.NewInputField().
 		SetLabel("New Name: ").
@@ -77,9 +86,11 @@ func main() {
 		SetAcceptanceFunc(tview.InputFieldMaxLength(50))
 
 	renameInput.SetFieldBackgroundColor(tcell.ColorGray)
+
+	// the layout master
 	flex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(fileList, 0, 1, true).
+		AddItem(frame, 0, 1, true).
 		AddItem(fileContent, 0, 3, false)
 
 	renameInput.SetDoneFunc(func(key tcell.Key) {
@@ -99,11 +110,6 @@ func main() {
 			flex.RemoveItem(renameInput)
 			app.SetFocus(fileList)
 
-			// fileList.SetSelectedFunc(func(index int, _ string, _ string, _ rune) {
-			// 	fileName, _ := fileList.GetItemText(index)
-			// 	fileContent.SetText(readFile(filepath.Join(directory, fileName)))
-			// 	renameInput.SetText(fileName)
-			// })
 		}
 	})
 	//
