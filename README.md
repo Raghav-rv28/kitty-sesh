@@ -14,6 +14,7 @@ Kitty-sesh is an Kitty Terminal Session Manager, Go-based application that provi
 installation command.
 ```
 # Usage
+use the command `kitty-sesh` to start the application in your terminal.
 -   **Navigation**: Use Arrow keys to traverse the session list
 -   **Launch Session**: Press `Enter` to start the selected session
 -   **Rename Session**: Press `r` or `R` to rename the selected session
