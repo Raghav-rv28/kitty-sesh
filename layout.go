@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 // Structs
@@ -19,6 +20,7 @@ type LayoutState struct {
 	Pairs          *Pairs             `json:"pairs,omitempty"`
 	BiasedCols     map[string]float64 `json:"biased_cols"`
 	BiasedRows     map[string]float64 `json:"biased_rows"`
+	BiasedMap      map[string]float64 `json:"biased_map"`
 }
 
 type Window struct {
@@ -55,10 +57,12 @@ func verticalLayout(tab Tab, outputFile *os.File) {
 		}
 		// make the command for each window
 		cmd := loopBreak(window.Title)
+		keyToCheck := strconv.Itoa(id)
+		_, resize := tab.LayoutState.BiasedMap[keyToCheck]
 		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
-		if 59/totalWindows > window.Rows {
+		if 59/totalWindows > window.Rows && resize {
 			outputFile.WriteString(fmt.Sprintf("resize_window shorter %d\n", (59/totalWindows)-window.Rows))
-		} else if 59/totalWindows < window.Rows {
+		} else if 59/totalWindows < window.Rows && resize {
 			outputFile.WriteString(fmt.Sprintf("resize_window taller %d\n", window.Rows-(59/totalWindows)))
 		}
 		if window.IsFocused {
@@ -81,11 +85,13 @@ func horiztonalLayout(tab Tab, outputFile *os.File) {
 		}
 		// make the command for each window
 		cmd := loopBreak(window.Title)
+		keyToCheck := strconv.Itoa(id)
+		_, resize := tab.LayoutState.BiasedMap[keyToCheck]
 
 		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
-		if 255/totalWindows > window.Cols {
+		if 255/totalWindows > window.Cols && resize {
 			outputFile.WriteString(fmt.Sprintf("resize_window narrower %d\n", (255/totalWindows)-window.Cols))
-		} else if 255/totalWindows < window.Cols {
+		} else if 255/totalWindows < window.Cols && resize {
 			outputFile.WriteString(fmt.Sprintf("resize_window wider %d\n", window.Cols-(255/totalWindows)))
 		}
 		if window.IsFocused {
@@ -185,6 +191,24 @@ func tallLayout(tab Tab, outputFile *os.File) {
 }
 
 func fatLayout(tab Tab, outputFile *os.File) {
+	traverseArr := getTraverseArr(tab)
+	// creating windows
+	windows := tab.Windows
+	// totalWindows := len(windows)
+	for _, id := range traverseArr {
+		window := getWindow(windows, id)
+		if window == nil {
+			continue
+		}
+		// make the command for each window
+		cmd := loopBreak(window.Title)
+
+		// Resizing stuff
+		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
+	}
+}
+
+func stackLayout(tab Tab, outputFile *os.File) {
 	traverseArr := getTraverseArr(tab)
 	// creating windows
 	windows := tab.Windows

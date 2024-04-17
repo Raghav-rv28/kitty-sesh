@@ -103,7 +103,8 @@ func convert(session []OSWindow, outputFile *os.File) {
 				tallLayout(tab, outputFile)
 			case "fat":
 				fatLayout(tab, outputFile)
-			default:
+			case "stack":
+				stackLayout(tab, outputFile)
 			}
 		}
 	}
