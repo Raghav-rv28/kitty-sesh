@@ -26,7 +26,7 @@ use the command `kitty-sesh` to start the application in your terminal.
 - **Navigation**: Use Arrow keys to traverse the session list
 - **Launch Session**: Press `Enter` to start the selected session
 - **Rename Session**: Press `r` or `R` to rename the selected session
-- **Delete Session**: Press `d` or `D` to delete the selected session
+- **Delete Session**: Press `d` to delete the selected session
 - **Quit Application**: Press `q` or `Q` to quit the application
 - **Save Session**: use the following command to save your session: `kitty-sesh ss <nameofsession>` . if you do not provide the name, a name will be auto generated for you.
 
@@ -53,4 +53,5 @@ For any questions or feedback, please feel free to contact us.
   - Fat
   - ~~Stack~~
 - Replace Flex with Grid
+- ~~Add the option to delete all sessions using 'D'~~
 - ~~Add confirm Modal for delete operation~~

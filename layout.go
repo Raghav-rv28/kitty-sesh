@@ -50,14 +50,14 @@ func verticalLayout(tab Tab, outputFile *os.File) {
 	totalWindows := len(windows)
 	traverseArr := getTraverseArr(tab)
 	// creating windows
-	for _, id := range traverseArr {
+	for indx, id := range traverseArr {
 		window := getWindow(windows, id)
 		if window == nil {
 			continue
 		}
 		// make the command for each window
 		cmd := loopBreak(window.Title)
-		keyToCheck := strconv.Itoa(id)
+		keyToCheck := strconv.Itoa(indx)
 		_, resize := tab.LayoutState.BiasedMap[keyToCheck]
 		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
 		if 59/totalWindows > window.Rows && resize {
@@ -66,7 +66,7 @@ func verticalLayout(tab Tab, outputFile *os.File) {
 			outputFile.WriteString(fmt.Sprintf("resize_window taller %d\n", window.Rows-(59/totalWindows)))
 		}
 		if window.IsFocused {
-			fmt.Println("focus")
+			outputFile.WriteString(fmt.Sprintln("focus"))
 		}
 	}
 }
@@ -78,14 +78,14 @@ func horiztonalLayout(tab Tab, outputFile *os.File) {
 	// creating windows
 	windows := tab.Windows
 	totalWindows := len(windows)
-	for _, id := range traverseArr {
+	for indx, id := range traverseArr {
 		window := getWindow(windows, id)
 		if window == nil {
 			continue
 		}
 		// make the command for each window
 		cmd := loopBreak(window.Title)
-		keyToCheck := strconv.Itoa(id)
+		keyToCheck := strconv.Itoa(indx)
 		_, resize := tab.LayoutState.BiasedMap[keyToCheck]
 
 		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))

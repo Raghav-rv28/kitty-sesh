@@ -164,6 +164,19 @@ func getFileList(directory string) *tview.List {
 }
 
 func main() {
+	// make the output file and folder.
+	usr, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println("Error getting user home directory:", err)
+		return
+	}
+
+	// Define the folder path
+	folderPath := filepath.Join(usr, ".config", "kitty", "sessions")
+	if err := os.MkdirAll(folderPath, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "error creating folder: %v\n", err)
+		os.Exit(1)
+	}
 	if len(os.Args) > 1 && os.Args[1] == "ss" {
 		// check if the terminal is kitty
 		term := os.Getenv("TERM")
@@ -181,19 +194,6 @@ func main() {
 		var session []OSWindow
 		if err := json.Unmarshal(output, &session); err != nil {
 			fmt.Fprintf(os.Stderr, "error decoding JSON: %v\n", err)
-			os.Exit(1)
-		}
-		// make the output file and folder.
-		usr, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Println("Error getting user home directory:", err)
-			return
-		}
-
-		// Define the folder path
-		folderPath := filepath.Join(usr, ".config", "kitty", "sessions")
-		if err := os.MkdirAll(folderPath, 0755); err != nil {
-			fmt.Fprintf(os.Stderr, "error creating folder: %v\n", err)
 			os.Exit(1)
 		}
 		// Generate the next filename
@@ -221,9 +221,10 @@ func main() {
 		fileList := getFileList(directory)
 		// using frame to add instructions on top
 		frame := tview.NewFrame(fileList).
-			AddText("Press 'q' to Quit kitty-sesh; 'r' to Rename sessions; 'd' to Delete sessions", false, tview.AlignCenter, tcell.ColorWhite).
+			AddText("Press 'q' to Quit kitty-sesh; 'r' to Rename sessions", false, tview.AlignCenter, tcell.ColorWhite).
+			AddText("'d' to Delete sessions; 'D' to delete All Sessions", false, tview.AlignCenter, tcell.ColorWhite).
 			AddText("Use Arrow Keys to traverse the list", true, tview.AlignCenter, tcell.ColorWhite).
-			AddText("Press Enter to start the session ", true, tview.AlignCenter, tcell.ColorWhite)
+			AddText("Press Enter to start the session", true, tview.AlignCenter, tcell.ColorWhite)
 		// File content preview
 		fileContent := tview.NewTextView()
 		fileContent.SetBorder(true).SetTitle("Preview")
@@ -277,7 +278,7 @@ func main() {
 				case 'q', 'Q':
 					app.Stop()
 					return nil
-				case 'd', 'D':
+				case 'd':
 					modal.SetText("Are you sure you want to delete this session?")
 					flex.AddItem(modal, 1, 0, true)
 					app.SetFocus(modal)
@@ -298,14 +299,54 @@ func main() {
 						app.SetFocus(fileList)
 					})
 					return nil
+				case 'D':
+					modal.SetText("Are you sure you want to delete All sessions?")
+					flex.AddItem(modal, 1, 0, true)
+					app.SetFocus(modal)
+					modal.SetDoneFunc(func(btnIndx int, btnLbl string) {
+						if btnLbl == "Yes" {
+							os.RemoveAll(directory)
+							if err := os.MkdirAll(directory, 0755); err != nil {
+								fmt.Fprintf(os.Stderr, "error creating folder: %v\n", err)
+								os.Exit(1)
+							}
+							refreshFileList(fileList, directory)
+						}
+						flex.RemoveItem(modal)
+						app.SetFocus(fileList)
+					})
+
 				}
 				// updating the FileContent primitive to show the contents of the file.
-			} else if event.Key() == tcell.KeyUp || event.Key() == tcell.KeyDown {
+			} else if event.Key() == tcell.KeyUp {
 				if fileList.GetItemCount() == 0 {
 					fileContent.SetText(fmt.Sprintln("No Sessions Available"))
 					return nil
 				}
 				index := fileList.GetCurrentItem()
+				if index > 0 {
+					index -= 1
+				} else if index == 0 {
+					index = fileList.GetItemCount() - 1
+				}
+				fileName, _ := fileList.GetItemText(index)
+				content, err := os.ReadFile(filepath.Join(directory, fileName))
+				if err != nil {
+					fileContent.SetText(fmt.Sprintf("Error reading file: %s", err))
+					return nil
+				}
+				fileContent.SetText(string(content))
+			} else if event.Key() == tcell.KeyDown {
+				if fileList.GetItemCount() == 0 {
+					fileContent.SetText(fmt.Sprintln("No Sessions Available"))
+					return nil
+				}
+				index := fileList.GetCurrentItem()
+				if index+1 < fileList.GetItemCount() {
+					index += 1
+				} else if index+1 == fileList.GetItemCount() {
+					index = 0
+				}
 				fileName, _ := fileList.GetItemText(index)
 				content, err := os.ReadFile(filepath.Join(directory, fileName))
 				if err != nil {
