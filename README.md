@@ -16,7 +16,7 @@ Kitty-sesh is an Kitty Terminal Session Manager, Go-based application that provi
 - use the command below for installation in Linux.
 
 ```sh
-installation command.
+bash -c "$(curl -sL https://raw.githubusercontent.com/Raghav-rv28/kitty-sesh/main/install.sh)"
 ```
 
 ## Usage
