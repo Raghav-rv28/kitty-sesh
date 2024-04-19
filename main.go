@@ -243,6 +243,9 @@ func main() {
 			AddItem(frame, 0, 1, true).
 			AddItem(fileContent, 0, 3, false)
 
+		// grid := tview.NewGrid().SetRows(30, 0, 5).
+		// 	AddItem(frame, 0, 0, 1, 1, 0, 125, true).
+		// 	AddItem(fileContent, 1, 0, 1, 1, 0, 125, true)
 		renameInput.SetDoneFunc(func(key tcell.Key) {
 			if key == tcell.KeyEnter {
 				oldName, _ := fileList.GetItemText(fileList.GetCurrentItem())
@@ -258,6 +261,7 @@ func main() {
 					}
 				}
 				flex.RemoveItem(renameInput)
+				// grid.RemoveItem(renameInput)
 				app.SetFocus(fileList)
 
 			}
@@ -272,6 +276,7 @@ func main() {
 					fileName, _ := fileList.GetItemText(index)
 					renameInput.SetText(strings.Split(fileName, ".kitty")[0])
 					flex.AddItem(renameInput, 0, 1, true)
+					// grid.AddItem(renameInput, 2, 0, 1, 1, 0, 0, true)
 					app.SetFocus(renameInput)
 					// flex.AddItem(modal(renameInput, 75, 25), 1, 0, true)
 					return nil
