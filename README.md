@@ -27,6 +27,7 @@ use the command `kitty-sesh` to start the application in your terminal.
 - **Launch Session**: Press `Enter` to start the selected session
 - **Rename Session**: Press `r` or `R` to rename the selected session
 - **Delete Session**: Press `d` to delete the selected session
+- Delete All Sessions: Press `D` to delete all sessions present.
 - **Quit Application**: Press `q` or `Q` to quit the application
 - **Save Session**: use the following command to save your session: `kitty-sesh ss <nameofsession>` . if you do not provide the name, a name will be auto generated for you.
 

@@ -45,3 +45,5 @@ sudo chmod +x "$INSTALL_DIR/$BINARY_NAME"
 rm -rf "$TMP_DIR"
 
 echo "Installation completed. You can now use '$BINARY_NAME' command."
+echo "All sessions are stored at home/<usr>/.config/kitty/sessions"
+echo "Read about use here: https://github.com/Raghav-rv28/kitty-sesh/blob/main/README.md"
