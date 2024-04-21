@@ -9,6 +9,7 @@ Kitty-sesh is an Kitty Terminal Session Manager, Go-based application that provi
 ### Requirements
 
 - Go (v1.16 or higher)
+- Git
 - Kitty Terminal
 
 ### Steps to install
