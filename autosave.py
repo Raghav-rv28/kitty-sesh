@@ -27,3 +27,4 @@ def handle_result(args: List[str], answer: str, target_window_id: int, boss: Bos
         # Write JSON data to the file
         with open(file_path, 'w') as f:
             json.dump(json_data, f)
+    boss.close_tab()

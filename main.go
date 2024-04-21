@@ -110,10 +110,10 @@ func convert(session []OSWindow, outputFile *os.File) {
 	}
 }
 
-func refreshFileList(fileList *tview.List, directory string) {
-	files, err := os.ReadDir(directory)
+func refreshFileList(fileList *tview.List, folderPath string) {
+	files, err := os.ReadDir(folderPath)
 	if err != nil {
-		fmt.Println("Error reading directory:", err)
+		fmt.Println("Error reading folderPath:", err)
 		return
 	}
 
@@ -132,15 +132,15 @@ func readFile(filePath string) string {
 	return string(content)
 }
 
-func getFileList(directory string) *tview.List {
+func getFileList(folderPath string) *tview.List {
 	// List of files
 	fileList := tview.NewList().
 		ShowSecondaryText(false)
 	fileList.SetTitle("Sessions").SetBorder(true)
-	// Load files from the directory
-	files, err := os.ReadDir(directory)
+	// Load files from the folderPath
+	files, err := os.ReadDir(folderPath)
 	if err != nil {
-		fmt.Println("Error reading directory:", err)
+		fmt.Println("Error reading folderPath:", err)
 		return nil
 	}
 
@@ -150,7 +150,7 @@ func getFileList(directory string) *tview.List {
 
 	// run the sessions on pressing enter
 	fileList.SetSelectedFunc(func(index int, primaryString string, _ string, _ rune) {
-		cmd := exec.Command("kitty", "--detach", "--session", filepath.Join(directory, primaryString))
+		cmd := exec.Command("kitty", "--detach", "--session", filepath.Join(folderPath, primaryString))
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
@@ -167,7 +167,7 @@ func main() {
 	// make the output file and folder.
 	usr, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Println("Error getting user home directory:", err)
+		fmt.Println("Error getting user home folderPath:", err)
 		return
 	}
 
@@ -215,10 +215,9 @@ func main() {
 	} else {
 		app := tview.NewApplication()
 
-		// Constant directory
-		directory := "/home/raghav/.config/kitty/sessions/"
-		// get list gui with list of kitty sessions in the directory.
-		fileList := getFileList(directory)
+		// Constant folderPath
+		// get list gui with list of kitty sessions in the folderPath.
+		fileList := getFileList(folderPath)
 		// using frame to add instructions on top
 		frame := tview.NewFrame(fileList).
 			AddText("Press 'q' to Quit kitty-sesh; 'r' to Rename sessions", false, tview.AlignCenter, tcell.ColorWhite).
@@ -252,11 +251,11 @@ func main() {
 				newName := renameInput.GetText()
 				newName += ".kitty"
 				if newName != "" && newName != oldName {
-					err := os.Rename(filepath.Join(directory, oldName), filepath.Join(directory, newName))
+					err := os.Rename(filepath.Join(folderPath, oldName), filepath.Join(folderPath, newName))
 					if err != nil {
 						fmt.Println("Error renaming file:", err)
 					} else {
-						refreshFileList(fileList, directory)
+						refreshFileList(fileList, folderPath)
 						fileContent.SetText("")
 					}
 				}
@@ -292,13 +291,13 @@ func main() {
 							index := fileList.GetCurrentItem()
 							fileName, _ := fileList.GetItemText(index)
 							fileList.SetCurrentItem(index + 1)
-							content, err := os.ReadFile(filepath.Join(directory, fileName))
+							content, err := os.ReadFile(filepath.Join(folderPath, fileName))
 							if err != nil {
 								fileContent.SetText(fmt.Sprintf("Error reading file: %s", err))
 							}
 							fileContent.SetText(string(content))
-							os.Remove(filepath.Join(directory, fileName))
-							refreshFileList(fileList, directory)
+							os.Remove(filepath.Join(folderPath, fileName))
+							refreshFileList(fileList, folderPath)
 						}
 						flex.RemoveItem(modal)
 						app.SetFocus(fileList)
@@ -310,12 +309,12 @@ func main() {
 					app.SetFocus(modal)
 					modal.SetDoneFunc(func(btnIndx int, btnLbl string) {
 						if btnLbl == "Yes" {
-							os.RemoveAll(directory)
-							if err := os.MkdirAll(directory, 0755); err != nil {
+							os.RemoveAll(folderPath)
+							if err := os.MkdirAll(folderPath, 0755); err != nil {
 								fmt.Fprintf(os.Stderr, "error creating folder: %v\n", err)
 								os.Exit(1)
 							}
-							refreshFileList(fileList, directory)
+							refreshFileList(fileList, folderPath)
 						}
 						flex.RemoveItem(modal)
 						app.SetFocus(fileList)
@@ -335,7 +334,7 @@ func main() {
 					index = fileList.GetItemCount() - 1
 				}
 				fileName, _ := fileList.GetItemText(index)
-				content, err := os.ReadFile(filepath.Join(directory, fileName))
+				content, err := os.ReadFile(filepath.Join(folderPath, fileName))
 				if err != nil {
 					fileContent.SetText(fmt.Sprintf("Error reading file: %s", err))
 					return nil
@@ -353,7 +352,7 @@ func main() {
 					index = 0
 				}
 				fileName, _ := fileList.GetItemText(index)
-				content, err := os.ReadFile(filepath.Join(directory, fileName))
+				content, err := os.ReadFile(filepath.Join(folderPath, fileName))
 				if err != nil {
 					fileContent.SetText(fmt.Sprintf("Error reading file: %s", err))
 					return nil
@@ -363,13 +362,13 @@ func main() {
 			return event
 		})
 
-		// Load files from the directory
-		refreshFileList(fileList, directory)
+		// Load files from the folderPath
+		refreshFileList(fileList, folderPath)
 
 		// Set initial file content
 		if fileList.GetItemCount() > 0 {
 			firstFile, _ := fileList.GetItemText(0)
-			fileContent.SetText(readFile(filepath.Join(directory, firstFile)))
+			fileContent.SetText(readFile(filepath.Join(folderPath, firstFile)))
 		}
 
 		if err := app.SetRoot(flex, true).Run(); err != nil {
