@@ -47,6 +47,7 @@ to uninstall simply delete the kitty-sesh file present at `/usr/local/bin`
 ```sh
 sudo rm /usr/local/bin/kitty-sesh
 ```
+
 ## TODO
 
 - Work on Layouts Resizing
@@ -60,3 +61,4 @@ sudo rm /usr/local/bin/kitty-sesh
 - Replace Flex with Grid
 - ~~Add the option to delete all sessions using 'D'~~
 - ~~Add confirm Modal for delete operation~~
+- Add Error Modal

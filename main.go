@@ -56,10 +56,11 @@ func main() {
 		convert(session, outputFile)
 	} else {
 		app := tview.NewApplication()
-
+		modalError := tview.NewModal().AddButtons([]string{"Close"})
+		flex := tview.NewFlex()
 		// Constant folderPath
 		// get list gui with list of kitty sessions in the folderPath.
-		fileList := getFileList(folderPath)
+		fileList := getFileList(folderPath, modalError, flex)
 		// using frame to add instructions on top
 		frame := tview.NewFrame(fileList).
 			AddText("Press 'q' to Quit kitty-sesh; 'r' to Rename sessions", false, tview.AlignCenter, tcell.ColorWhite).
@@ -79,8 +80,8 @@ func main() {
 		// modal to confirm changes
 		modal := tview.NewModal().AddButtons([]string{"Yes", "No"})
 		// the layout master
-		flex := tview.NewFlex().
-			SetDirection(tview.FlexRow).
+
+		flex.SetDirection(tview.FlexRow).
 			AddItem(frame, 0, 1, true).
 			AddItem(fileContent, 0, 3, false)
 

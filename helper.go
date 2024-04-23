@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/rivo/tview"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func getNextFileName(folderPath string, Args []string) (string, error) {
@@ -83,7 +84,7 @@ func convert(session []OSWindow, outputFile *os.File) {
 
 		for _, tab := range osWindow.Tabs {
 			outputFile.WriteString(fmt.Sprintf("new_tab %s\n", tab.Title))
-			outputFile.WriteString(fmt.Sprintf("layout %s\n", tab.Layout))
+			// outputFile.WriteString(fmt.Sprintf("layout %s\n", tab.Layout))
 			switch tab.Layout {
 			case "horizontal":
 				horiztonalLayout(tab, outputFile)
@@ -126,7 +127,7 @@ func readFile(filePath string) string {
 	return string(content)
 }
 
-func getFileList(folderPath string) *tview.List {
+func getFileList(folderPath string, modalErr *tview.Modal, flex *tview.Flex) *tview.List {
 	// List of files
 	fileList := tview.NewList().
 		ShowSecondaryText(false)
@@ -150,6 +151,14 @@ func getFileList(folderPath string) *tview.List {
 
 		err := cmd.Run()
 		if err != nil {
+			modalErr.SetText(fmt.Sprintln("Error launching Kitty session:", cmd.Args, err))
+			modalErr.SetDoneFunc(func(btnIndex int, btnLabel string) {
+				if btnLabel == "Close" {
+					flex.RemoveItem(modalErr)
+				}
+			})
+			flex.AddItem(modalErr, 1, 0, true)
+
 			fmt.Println("Error launching Kitty session:", cmd.Args, err)
 			return
 		}
@@ -171,4 +180,11 @@ func getFolderPath() string {
 		os.Exit(1)
 	}
 	return folderPath
+}
+
+func getTerminalSize() (int, int, error) {
+	i := int(os.Stdout.Fd())
+	width, height, err := terminal.GetSize(i)
+	fmt.Println(width, height)
+	return width, height, err
 }

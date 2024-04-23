@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 )
@@ -15,7 +16,7 @@ type Pairs struct {
 }
 
 type LayoutState struct {
-	MainBias       []float32          `json:"main_bias"`
+	MainBias       []float64          `json:"main_bias"`
 	NumFullSizeWin int16              `json:"num_full_size_windows"`
 	Pairs          *Pairs             `json:"pairs,omitempty"`
 	BiasedCols     map[string]float64 `json:"biased_cols"`
@@ -45,9 +46,42 @@ type Tab struct {
 	Groups      []Groups    `json:"groups"`
 }
 
+func resizeLayoutBased(tab Tab, outputFile *os.File, window *Window) {
+	rows, columns, err := getTerminalSize()
+	fmt.Println("rows:", rows, "columns:", columns)
+	if err != nil {
+		panic(err)
+	}
+	layout := tab.Layout
+	totalWindows := len(tab.Windows)
+	switch layout {
+	case "horizontal":
+		if columns/totalWindows > window.Cols {
+			outputFile.WriteString(fmt.Sprintf("resize_window narrower %d\n", (columns/totalWindows)-window.Cols))
+		} else if columns/totalWindows < window.Cols {
+			outputFile.WriteString(fmt.Sprintf("resize_window wider %d\n", window.Cols-(columns/totalWindows)))
+		}
+	case "vertical":
+		if rows/totalWindows > window.Rows {
+			outputFile.WriteString(fmt.Sprintf("resize_window shorter %d\n", (rows/totalWindows)-window.Rows))
+		} else if rows/totalWindows < window.Rows {
+			outputFile.WriteString(fmt.Sprintf("resize_window taller %d\n", window.Rows-(rows/totalWindows)))
+		}
+	case "grid":
+		gridLayout(tab, outputFile)
+	case "split":
+		splitLayout(tab, outputFile)
+	case "tall":
+		tallLayout(tab, outputFile)
+	case "fat":
+		fatLayout(tab, outputFile)
+	case "stack":
+		stackLayout(tab, outputFile)
+	}
+}
+
 func verticalLayout(tab Tab, outputFile *os.File) {
 	windows := tab.Windows
-	totalWindows := len(windows)
 	traverseArr := getTraverseArr(tab)
 	// creating windows
 	for indx, id := range traverseArr {
@@ -60,10 +94,8 @@ func verticalLayout(tab Tab, outputFile *os.File) {
 		keyToCheck := strconv.Itoa(indx)
 		_, resize := tab.LayoutState.BiasedMap[keyToCheck]
 		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
-		if 59/totalWindows > window.Rows && resize {
-			outputFile.WriteString(fmt.Sprintf("resize_window shorter %d\n", (59/totalWindows)-window.Rows))
-		} else if 59/totalWindows < window.Rows && resize {
-			outputFile.WriteString(fmt.Sprintf("resize_window taller %d\n", window.Rows-(59/totalWindows)))
+		if resize {
+			resizeLayoutBased(tab, outputFile, window)
 		}
 		if window.IsFocused {
 			outputFile.WriteString(fmt.Sprintln("focus"))
@@ -77,7 +109,6 @@ func horiztonalLayout(tab Tab, outputFile *os.File) {
 
 	// creating windows
 	windows := tab.Windows
-	totalWindows := len(windows)
 	for indx, id := range traverseArr {
 		window := getWindow(windows, id)
 		if window == nil {
@@ -89,10 +120,8 @@ func horiztonalLayout(tab Tab, outputFile *os.File) {
 		_, resize := tab.LayoutState.BiasedMap[keyToCheck]
 
 		outputFile.WriteString(fmt.Sprintf("launch %s --hold --stdin-source=@screen_scrollback --title '%s' --cwd %s %s\n", getEnvVars(window.Env), window.Title, window.Cwd, cmd))
-		if 255/totalWindows > window.Cols && resize {
-			outputFile.WriteString(fmt.Sprintf("resize_window narrower %d\n", (255/totalWindows)-window.Cols))
-		} else if 255/totalWindows < window.Cols && resize {
-			outputFile.WriteString(fmt.Sprintf("resize_window wider %d\n", window.Cols-(255/totalWindows)))
+		if resize {
+			resizeLayoutBased(tab, outputFile, window)
 		}
 		if window.IsFocused {
 			fmt.Println("focus")
@@ -173,6 +202,12 @@ func splitLayout(tab Tab, outputFile *os.File) {
 }
 
 func tallLayout(tab Tab, outputFile *os.File) {
+	bias := tab.LayoutState.MainBias[0]
+	for i := 1; i < int(tab.LayoutState.NumFullSizeWin); i++ {
+		bias += tab.LayoutState.MainBias[i]
+	}
+
+	outputFile.WriteString(fmt.Sprintf("layout tall:bias=%d;full_size=%d\n", int(math.Round(bias*100)), tab.LayoutState.NumFullSizeWin))
 	traverseArr := getTraverseArr(tab)
 	// creating windows
 	windows := tab.Windows
