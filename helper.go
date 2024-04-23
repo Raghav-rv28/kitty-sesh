@@ -84,7 +84,7 @@ func convert(session []OSWindow, outputFile *os.File) {
 
 		for _, tab := range osWindow.Tabs {
 			outputFile.WriteString(fmt.Sprintf("new_tab %s\n", tab.Title))
-			// outputFile.WriteString(fmt.Sprintf("layout %s\n", tab.Layout))
+			outputFile.WriteString(fmt.Sprintf("layout %s\n", tab.Layout))
 			switch tab.Layout {
 			case "horizontal":
 				horiztonalLayout(tab, outputFile)

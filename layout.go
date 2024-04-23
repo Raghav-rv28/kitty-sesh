@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"strconv"
 )
@@ -202,12 +201,12 @@ func splitLayout(tab Tab, outputFile *os.File) {
 }
 
 func tallLayout(tab Tab, outputFile *os.File) {
-	bias := tab.LayoutState.MainBias[0]
-	for i := 1; i < int(tab.LayoutState.NumFullSizeWin); i++ {
-		bias += tab.LayoutState.MainBias[i]
-	}
-
-	outputFile.WriteString(fmt.Sprintf("layout tall:bias=%d;full_size=%d\n", int(math.Round(bias*100)), tab.LayoutState.NumFullSizeWin))
+	// bias := tab.LayoutState.MainBias[0]
+	// for i := 1; i < int(tab.LayoutState.NumFullSizeWin); i++ {
+	// 	bias += tab.LayoutState.MainBias[i]
+	// }
+	//
+	// outputFile.WriteString(fmt.Sprintf("layout tall:bias=%d;full_size=%d\n", int(math.Round(bias*100)), tab.LayoutState.NumFullSizeWin))
 	traverseArr := getTraverseArr(tab)
 	// creating windows
 	windows := tab.Windows
